@@ -1,7 +1,6 @@
 #include "pico/stdlib.h"
 
 #define BUZZER1 10
-#define BUZZER2 21
 #define BUTTON_CANCELAR 6
 
 

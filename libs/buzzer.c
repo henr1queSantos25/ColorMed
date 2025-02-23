@@ -1,6 +1,4 @@
 #include "buzzer.h"
-#include "hardware/pwm.h"
-#include "hardware/clocks.h"
 #include "pico/stdlib.h"
 
 

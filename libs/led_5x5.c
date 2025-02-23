@@ -23,13 +23,6 @@ void setup_PIO()
     ColorMed_program_init(pio, sm, offset, OUT_PIN);
 }
 
-
-// LIGA OS LEDS NECESSÁRIOS
-static inline void put_pixel(uint32_t pixel_grb)
-{
-    pio_sm_put_blocking(pio0, 0, pixel_grb << 8u);
-}
-
 uint32_t matrix_rgb(double b, double r, double g)
 {
     unsigned char R, G, B;

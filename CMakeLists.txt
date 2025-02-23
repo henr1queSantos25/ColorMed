@@ -61,7 +61,6 @@ target_link_libraries(ColorMed
         hardware_i2c
         hardware_pio
         hardware_rtc
-        hardware_pwm
         hardware_timer
         
         )
