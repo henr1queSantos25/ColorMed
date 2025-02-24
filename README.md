@@ -97,7 +97,8 @@ O **ColorMed** é um sistema embarcado desenvolvido para auxiliar na administra�
 - **`libs/led_5x5.h` & `libs/led_5x5.c`** → Controle da matriz de LED para exibir cores dos alarmes.  
 - **`libs/ssd1306.h` & `libs/ssd1306.c`** → Gerenciamento do display OLED.  
 - **`libs/font.h`** → Fonte customizada para caracteres no display.
-- `diagram.json`: Configuração do circuito para simulação no **Wokwi**.  
+- **`ColorMed.pio`**: Código PIO para controle eficiente dos LEDs.
+- **`diagram.json`**: Configuração do circuito para simulação no **Wokwi**.  
 - **`Documentação/`** → Pasta com o relatório técnico e detalhes do projeto.  
 
 ---
