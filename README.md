@@ -77,7 +77,7 @@ O **ColorMed** é um sistema embarcado desenvolvido para auxiliar na administra�
 
 | Componente             | Pino do Pico | Função |
 |------------------------|-------------|-------------------------------|
-| **Botão Joystick**     | GP22        | Inicia a configuração do alarme |
+| **Botão Configuração**     | GP22        | Inicia a configuração do alarme |
 | **Botão Editar**       | GP5         | Ajusta horas, minutos e cor |
 | **Botão Confirmar**    | GP6         | Confirma a seleção |
 | **Matriz de LED RGB**  | GP7         | Exibe a cor do medicamento |
