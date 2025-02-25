@@ -38,13 +38,13 @@ Alarme alarmes[MAX_ALARMES];
 int total_alarmes = 0;
 
 // Variáveis Globais
-datetime_t t; // Estrutura de data e hora
-uint32_t volatile last_time = 0; // Variável para debounce
-uint volatile quant_horas = 0; // Variável para configuração do alarme
-uint volatile quant_minutos = 0; // Variável para configuração do alarme
-bool volatile configurando = false; // Indica se o usuário está configurando um alarme
-volatile bool em_configuracao = false; // Indica se o usuário está configurando um alarme
-volatile bool alarme_ativo = false; // Indica se há um alarme ativo
+datetime_t t;                                    // Estrutura de data e hora
+uint32_t volatile last_time = 0;                 // Variável para debounce
+uint volatile quant_horas = 0;                   // Variável para configuração do alarme
+uint volatile quant_minutos = 0;                 // Variável para configuração do alarme
+bool volatile configurando = false;              // Indica se o usuário está configurando um alarme
+volatile bool em_configuracao = false;           // Indica se o usuário está configurando um alarme
+volatile bool alarme_ativo = false;              // Indica se há um alarme ativo
 volatile bool precisa_verificar_alarmes = false; // Flag global para verificar alarmes
 
 // Lista de cores disponíveis
@@ -54,6 +54,7 @@ const char *opcoes[] = {"1. Verde", "2. Vermelho", "3. Azul", "4. Amarelo", "5. 
 // Prototipação
 void setup();
 void configurar_alarme();
+void definir_hora_atual();
 void initRTC();
 void display_time();
 void adicionar_alarme(int horas, int minutos, int cor);
@@ -72,11 +73,11 @@ int main()
     sleep_ms(500);
 
     // Interrupção do botão Jytk
-    gpio_set_irq_enabled_with_callback(BUTTON_Jytk, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);  
+    gpio_set_irq_enabled_with_callback(BUTTON_Jytk, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
 
     while (true)
     {
-        display_time(); // Exibe o horário atual
+        display_time();      // Exibe o horário atual
         verificar_alarmes(); // Verifica se há alarmes ativos
 
         if (configurando) // Se o botão Jytk foi pressionado, inicia a configuração do alarme
@@ -84,7 +85,7 @@ int main()
             configurar_alarme();
         }
 
-        sleep_ms(10); 
+        sleep_ms(10);
     }
 }
 
@@ -109,12 +110,10 @@ void gpio_irq_handler(uint gpio, uint32_t events)
 /* ==========================================================
    FUNÇÃO PARA CONFIGURAÇÃO DO ALARME
    ========================================================== */
-void configurar_alarme()
+void configurar_tempo(const char *label, uint *quantidade, uint max_valor)
 {
-    em_configuracao = true; // Indica que o usuário está configurando um alarme
-    char time_config[6];   // Armazena o horário configurado
+    char time_config[6]; // Armazena o horário configurado
 
-    // ETAPA 1: Configuração de HORAS
     while (gpio_get(BUTTON_Confirmar)) // Enquanto o botão de confirmação não for pressionado
     {
         snprintf(time_config, sizeof(time_config), "%02d:%02d", quant_horas, quant_minutos); // Formata o horário
@@ -122,44 +121,31 @@ void configurar_alarme()
         ssd1306_fill(&ssd, false);
         ssd1306_rect(&ssd, 1, 1, 126, 62, 1, 0);
 
-        ssd1306_draw_string(&ssd, "Horas:", 10, 5);
+        ssd1306_draw_string(&ssd, label, 10, 5);
         ssd1306_draw_string(&ssd, time_config, 44, 28);
-        ssd1306_draw_string(&ssd, "^^", 44, 40); // Setinhas abaixo das horas
+        ssd1306_draw_string(&ssd, "^^", 44, 40); // Setinhas abaixo das horas/minutos
 
         ssd1306_send_data(&ssd);
 
-        if (debounce_button(BUTTON_Editar)) // Se o botão de edição for pressionado, incrementa as horas
+        if (debounce_button(BUTTON_Editar)) // Se o botão de edição for pressionado, incrementa as horas/minutos
         {
-            quant_horas = (quant_horas + 1) % 24;
-            sleep_ms(20);
-        }
-    }
-    buzzer_confirmacao(); 
-
-    sleep_ms(150);
-
-    // ETAPA 2: Configuração de MINUTOS
-    while (gpio_get(BUTTON_Confirmar)) // Enquanto o botão de confirmação não for pressionado
-    {
-        snprintf(time_config, sizeof(time_config), "%02d:%02d", quant_horas, quant_minutos); // Formata o horário
-
-        ssd1306_fill(&ssd, false);
-        ssd1306_rect(&ssd, 1, 1, 126, 62, 1, 0);
-
-        ssd1306_draw_string(&ssd, "Minutos: ", 10, 5);
-        ssd1306_draw_string(&ssd, time_config, 44, 28);
-        ssd1306_draw_string(&ssd, "   ^^", 44, 40); // Setinhas abaixo dos minutos
-
-        ssd1306_send_data(&ssd);
-
-        if (debounce_button(BUTTON_Editar)) // Se o botão de edição for pressionado, incrementa os minutos
-        {
-            quant_minutos = (quant_minutos + 1) % 60;
+            *quantidade = (*quantidade + 1) % max_valor;
             sleep_ms(20);
         }
     }
     buzzer_confirmacao();
     sleep_ms(150);
+}
+
+void configurar_alarme()
+{
+    em_configuracao = true; // Indica que o usuário está configurando um alarme
+
+    // ETAPA 1: Configuração de HORAS
+    configurar_tempo("Horas:", &quant_horas, 24);
+
+    // ETAPA 2: Configuração de MINUTOS
+    configurar_tempo("Minutos:", &quant_minutos, 60);
 
     // Escolha de Cores
     while (gpio_get(BUTTON_Confirmar)) // Enquanto o botão de confirmação não for pressionado
@@ -182,28 +168,33 @@ void configurar_alarme()
     adicionar_alarme(quant_horas, quant_minutos, opcao_selecionada); // Adiciona o alarme configurado
 
     quant_horas = quant_minutos = opcao_selecionada = 0; // Reseta as variáveis
-    em_configuracao = false; // Indica que o usuário terminou de configurar o alarme
-    configurando = false; 
+    em_configuracao = false;                             // Indica que o usuário terminou de configurar o alarme
+    configurando = false;
 }
 
 /* ==========================================================
    RTC: INICIALIZAÇÃO E GERENCIAMENTO DE HORÁRIO
    ========================================================== */
+
+void definir_hora_atual() // DEFINIR HÓRARIO DE INICIALIZAÇÃO
+{
+    t.year = 2025;
+    t.month = 2;
+    t.day = 25;
+    t.hour = 17;
+    t.min = 18;
+    t.sec = 0;
+    rtc_set_datetime(&t);
+}
 void initRTC()
 {
-    rtc_init(); 
+    rtc_init();
     rtc_get_datetime(&t); // Obtém a data e hora atual
 
     if (t.year < 2024) // Se o RTC estiver zerado, define a data e hora atual
-    { 
+    {
         printf("RTC zerado, definindo hora...\n");
-        t.year = 2025;
-        t.month = 2;
-        t.day = 21;
-        t.hour = 00;
-        t.min = 4;
-        t.sec = 0;
-        rtc_set_datetime(&t);
+        definir_hora_atual();
     }
 }
 
@@ -213,7 +204,7 @@ void initRTC()
 void display_time()
 {
     rtc_get_datetime(&t);
-    char time_str[10]; // Armazena o horário formatado
+    char time_str[10];                                                // Armazena o horário formatado
     snprintf(time_str, sizeof(time_str), "%02d:%02d", t.hour, t.min); // Formata o horário
 
     ssd1306_fill(&ssd, false);
@@ -231,7 +222,7 @@ void display_time()
 void exibir_lista_cores()
 {
     ssd1306_fill(&ssd, false);
-    ssd1306_draw_string(&ssd, "Escolha uma cor", 0, 0); 
+    ssd1306_draw_string(&ssd, "Escolha uma cor", 0, 0);
 
     for (int i = 0; i < 5; i++)
     {
@@ -251,9 +242,9 @@ void exibir_lista_cores()
    ========================================================== */
 void adicionar_alarme(int horas, int minutos, int cor)
 {
-    for(int i = 0; i < total_alarmes; i++)
+    for (int i = 0; i < total_alarmes; i++)
     {
-        if(alarmes[i].horas == horas && alarmes[i].minutos == minutos) // Verifica se o alarme já existe
+        if (alarmes[i].horas == horas && alarmes[i].minutos == minutos) // Verifica se o alarme já existe
         {
             ssd1306_fill(&ssd, false);
             ssd1306_rect(&ssd, 1, 1, 126, 62, 1, 0);
@@ -272,14 +263,14 @@ void adicionar_alarme(int horas, int minutos, int cor)
         total_alarmes++;
         printf("Alarme salvo: %02d:%02d | Cor: %d\n", horas, minutos, cor);
     }
-    else 
+    else
     {
-            ssd1306_fill(&ssd, false);
-            ssd1306_rect(&ssd, 1, 1, 126, 62, 1, 0);
-            ssd1306_draw_string(&ssd, "LIMITE ATINGIDO", 5, 25);
-            ssd1306_send_data(&ssd);
-            buzzer_erro();
-            sleep_ms(2000);
+        ssd1306_fill(&ssd, false);
+        ssd1306_rect(&ssd, 1, 1, 126, 62, 1, 0);
+        ssd1306_draw_string(&ssd, "LIMITE ATINGIDO", 5, 25);
+        ssd1306_send_data(&ssd);
+        buzzer_erro();
+        sleep_ms(2000);
     }
 }
 
@@ -296,7 +287,7 @@ void verificar_alarmes()
 
             display_time();
             drawMatrix(alarmes[i].cor); // Exibe o alarme no LED
-            buzzer_alarme(); // Emite o alarme sonoro
+            buzzer_alarme();            // Emite o alarme sonoro
 
             drawMatrix(5); // Reseta o LED
             em_configuracao = false;
