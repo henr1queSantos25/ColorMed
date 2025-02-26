@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "pico/stdlib.h"
 #include "hardware/rtc.h"
 #include "pico/util/datetime.h"
@@ -40,8 +41,8 @@ int total_alarmes = 0;
 // Variáveis Globais
 datetime_t t;                                    // Estrutura de data e hora
 uint32_t volatile last_time = 0;                 // Variável para debounce
-uint volatile quant_horas = 0;                   // Variável para configuração do alarme
-uint volatile quant_minutos = 0;                 // Variável para configuração do alarme
+uint quant_horas = 0;                   // Variável para configuração do alarme
+uint quant_minutos = 0;                 // Variável para configuração do alarme
 bool volatile configurando = false;              // Indica se o usuário está configurando um alarme
 volatile bool em_configuracao = false;           // Indica se o usuário está configurando um alarme
 volatile bool alarme_ativo = false;              // Indica se há um alarme ativo
@@ -110,32 +111,33 @@ void gpio_irq_handler(uint gpio, uint32_t events)
 /* ==========================================================
    FUNÇÃO PARA CONFIGURAÇÃO DO ALARME
    ========================================================== */
-void configurar_tempo(const char *label, uint *quantidade, uint max_valor)
-{
-    char time_config[6]; // Armazena o horário configurado
-
-    while (gpio_get(BUTTON_Confirmar)) // Enquanto o botão de confirmação não for pressionado
-    {
-        snprintf(time_config, sizeof(time_config), "%02d:%02d", quant_horas, quant_minutos); // Formata o horário
-
-        ssd1306_fill(&ssd, false);
-        ssd1306_rect(&ssd, 1, 1, 126, 62, 1, 0);
-
-        ssd1306_draw_string(&ssd, label, 10, 5);
-        ssd1306_draw_string(&ssd, time_config, 44, 28);
-        ssd1306_draw_string(&ssd, "^^", 44, 40); // Setinhas abaixo das horas/minutos
-
-        ssd1306_send_data(&ssd);
-
-        if (debounce_button(BUTTON_Editar)) // Se o botão de edição for pressionado, incrementa as horas/minutos
-        {
-            *quantidade = (*quantidade + 1) % max_valor;
-            sleep_ms(20);
-        }
-    }
-    buzzer_confirmacao();
-    sleep_ms(150);
-}
+   void configurar_tempo(const char *label, uint *quantidade, uint max_valor)
+   {
+       char time_config[6]; // Armazena o horário configurado
+       int setinha_pos = (strcmp(label, "Minutos:") == 0) ? 68 : 44; // Posição da setinha (dependendo se é horas ou minutos)
+   
+       while (gpio_get(BUTTON_Confirmar)) // Enquanto o botão de confirmação não for pressionado
+       {
+           snprintf(time_config, sizeof(time_config), "%02d:%02d", quant_horas, quant_minutos); // Formata o horário
+   
+           ssd1306_fill(&ssd, false);
+           ssd1306_rect(&ssd, 1, 1, 126, 62, 1, 0);
+   
+           ssd1306_draw_string(&ssd, label, 10, 5);
+           ssd1306_draw_string(&ssd, time_config, 44, 28);
+           ssd1306_draw_string(&ssd, "^^", setinha_pos, 40); // Setinhas abaixo das horas/minutos
+   
+           ssd1306_send_data(&ssd);
+   
+           if (debounce_button(BUTTON_Editar)) // Se o botão de edição for pressionado, incrementa as horas/minutos
+           {
+               *quantidade = (*quantidade + 1) % max_valor;
+               sleep_ms(20);
+           }
+       }
+       buzzer_confirmacao();
+       sleep_ms(150);
+   }
 
 void configurar_alarme()
 {
