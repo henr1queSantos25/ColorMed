@@ -85,7 +85,6 @@ Para otimizar ainda mais a identificação dos medicamentos:
 - **`libs/font.h`**: Fonte customizada para o display.  
 - **`ColorMed.pio`**: Código PIO para controle eficiente dos LEDs.  
 - **`diagram.json`**: Configuração do circuito para simulação no **Wokwi**.  
-- **`Documentação/`**: Relatório técnico e detalhes do projeto.
 
 ---
 
